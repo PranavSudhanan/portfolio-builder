@@ -1,0 +1,462 @@
+/*
+ * resume.css — the stylesheet for rendered résumés.
+ *
+ * Like `portfolio.css`, this is plain CSS with no build step, because the same
+ * file is loaded by the builder's preview iframe and inlined into the standalone
+ * HTML export. Everything reads from a `--rs-*` custom property so a template and
+ * a colour choice compose freely.
+ *
+ * Units are millimetres and points. A résumé is a printed document first: sizing
+ * it in px and hoping the print scale works out is how you get a CV that looks
+ * right on screen and wrong on paper.
+ */
+
+.rs-root {
+  --rs-gap: 4mm;
+  margin: 0;
+  background: #e8e9ee;
+  color: var(--rs-text);
+  font-family: var(--rs-font-body);
+  font-size: var(--rs-size);
+  line-height: var(--rs-leading);
+  -webkit-font-smoothing: antialiased;
+}
+
+.rs-root *,
+.rs-root *::before,
+.rs-root *::after {
+  box-sizing: border-box;
+}
+
+.rs-root p {
+  margin: 0;
+}
+
+.rs-root ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rs-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ───────────────────────────── The sheet ───────────────────────────── */
+
+.rs-page {
+  position: relative;
+  width: var(--rs-page-w);
+  min-height: var(--rs-page-h);
+  margin: 0 auto;
+  padding: var(--rs-margin);
+  background: #fff;
+  color: var(--rs-text);
+  box-shadow: 0 10px 40px -12px rgb(0 0 0 / 0.35);
+}
+
+/*
+ * Page-break guides. The browser paginates at print time; on screen the sheet is
+ * one continuous column, so a faint rule every page-height shows roughly where
+ * the breaks will land.
+ */
+.rs-page[data-guides="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--rs-page-h) - 1px),
+    rgb(220 38 38 / 0.28) calc(var(--rs-page-h) - 1px),
+    rgb(220 38 38 / 0.28) var(--rs-page-h)
+  );
+}
+
+.rs-columns {
+  break-inside: auto;
+  display: grid;
+  grid-template-columns: var(--rs-sidebar-w) 1fr;
+  gap: calc(var(--rs-gap) * 1.6);
+  align-items: start;
+}
+
+.rs-columns[data-side="right"] {
+  grid-template-columns: 1fr var(--rs-sidebar-w);
+}
+
+.rs-aside {
+  /* Both columns fragment across pages; the grid row is broken, not skipped. */
+  break-inside: auto;
+  padding: calc(var(--rs-gap) * 0.9);
+  border-radius: 1.5mm;
+  background: var(--rs-tint);
+  /* Backgrounds are stripped by default when printing. */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ───────────────────────────── Header ───────────────────────────── */
+
+.rs-header {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--rs-gap) * 1.2);
+  margin-bottom: calc(var(--rs-gap) * 1.4);
+}
+
+.rs-header[data-align="center"] {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.rs-header[data-align="banner"] {
+  padding: calc(var(--rs-gap) * 1.1);
+  margin: calc(var(--rs-margin) * -1) calc(var(--rs-margin) * -1) calc(var(--rs-gap) * 1.4);
+  padding-inline: var(--rs-margin);
+  padding-top: var(--rs-margin);
+  background: var(--rs-accent);
+  color: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.rs-header[data-align="banner"] .rs-role,
+.rs-header[data-align="banner"] .rs-contact {
+  color: rgb(255 255 255 / 0.9);
+}
+
+.rs-name {
+  margin: 0;
+  font-family: var(--rs-font-heading);
+  font-size: calc(var(--rs-size) * 2.15);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--rs-heading);
+}
+
+.rs-header[data-align="banner"] .rs-name {
+  color: #fff;
+}
+
+.rs-role {
+  margin-top: 0.8mm;
+  font-family: var(--rs-font-heading);
+  font-size: calc(var(--rs-size) * 1.12);
+  font-weight: 500;
+  color: var(--rs-accent);
+}
+
+.rs-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1mm 4mm;
+  margin-top: 2mm;
+  font-size: calc(var(--rs-size) * 0.92);
+  color: var(--rs-muted);
+}
+
+.rs-header[data-align="center"] .rs-contact {
+  justify-content: center;
+}
+
+.rs-contact span {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2mm;
+}
+
+.rs-contact svg {
+  width: calc(var(--rs-size) * 1.05);
+  height: calc(var(--rs-size) * 1.05);
+  color: var(--rs-accent);
+  flex-shrink: 0;
+}
+
+.rs-photo {
+  width: 24mm;
+  height: 24mm;
+  flex-shrink: 0;
+  border-radius: 1.5mm;
+  object-fit: cover;
+  background: var(--rs-tint);
+}
+
+.rs-photo[data-shape="circle"] {
+  border-radius: 50%;
+}
+
+/* ───────────────────────────── Sections ───────────────────────────── */
+
+.rs-section {
+  margin-bottom: calc(var(--rs-gap) * 1.35);
+  /*
+   * Sections must be allowed to break: an Experience section with eight roles
+   * is taller than a page, and `avoid` on the whole section is simply ignored
+   * by the browser — which then breaks it anywhere. Keeping the *entries*
+   * intact, and the heading with its first entry, is what actually controls
+   * where the page turns.
+   */
+  break-inside: auto;
+}
+
+.rs-section:last-child {
+  margin-bottom: 0;
+}
+
+.rs-heading {
+  /* Never leave a heading stranded at the foot of a page. */
+  break-after: avoid-page;
+  margin: 0 0 calc(var(--rs-gap) * 0.55);
+  font-family: var(--rs-font-heading);
+  font-size: calc(var(--rs-size) * 1.02);
+  font-weight: 700;
+  letter-spacing: var(--rs-heading-tracking);
+  text-transform: var(--rs-heading-case);
+  color: var(--rs-heading);
+}
+
+.rs-heading[data-rule="true"] {
+  padding-bottom: 1.1mm;
+  border-bottom: 0.4mm solid var(--rs-accent);
+}
+
+/* Accent marker used by the creative template. */
+.rs-root[data-rs-template="creative"] .rs-heading {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  color: var(--rs-accent);
+}
+
+.rs-root[data-rs-template="creative"] .rs-heading::before {
+  content: "";
+  width: 3mm;
+  height: 3mm;
+  border-radius: 0.6mm;
+  background: var(--rs-accent);
+  flex-shrink: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.rs-root[data-rs-template="technical"] .rs-heading::before {
+  content: "// ";
+  color: var(--rs-accent);
+}
+
+/* ───────────────────────────── Entries ───────────────────────────── */
+
+.rs-entry {
+  margin-bottom: calc(var(--rs-gap) * 0.85);
+  break-inside: avoid;
+}
+
+.rs-entry:last-child {
+  margin-bottom: 0;
+}
+
+.rs-entry-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3mm;
+}
+
+.rs-entry-title {
+  font-family: var(--rs-font-heading);
+  font-size: calc(var(--rs-size) * 1.04);
+  font-weight: 600;
+  color: var(--rs-heading);
+}
+
+.rs-entry-period {
+  flex-shrink: 0;
+  font-size: calc(var(--rs-size) * 0.88);
+  font-variant-numeric: tabular-nums;
+  color: var(--rs-muted);
+  white-space: nowrap;
+}
+
+.rs-entry-org {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 2mm;
+  font-size: calc(var(--rs-size) * 0.95);
+  color: var(--rs-accent);
+  font-weight: 500;
+}
+
+.rs-entry-org .rs-sep {
+  color: var(--rs-muted);
+  font-weight: 400;
+}
+
+.rs-entry-desc {
+  margin-top: 0.8mm;
+  color: var(--rs-text);
+}
+
+.rs-bullets {
+  margin-top: 1mm;
+}
+
+.rs-bullets li {
+  position: relative;
+  padding-left: 3.4mm;
+  margin-bottom: 0.6mm;
+}
+
+.rs-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 0.6mm;
+  top: 0.62em;
+  width: 1.1mm;
+  height: 1.1mm;
+  border-radius: 50%;
+  background: var(--rs-accent);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.rs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2mm;
+  margin-top: 1.2mm;
+}
+
+.rs-tag {
+  padding: 0.5mm 1.8mm;
+  border-radius: 0.8mm;
+  border: 0.25mm solid var(--rs-border);
+  font-size: calc(var(--rs-size) * 0.85);
+  color: var(--rs-muted);
+  white-space: nowrap;
+}
+
+.rs-link {
+  font-size: calc(var(--rs-size) * 0.88);
+  color: var(--rs-accent);
+  word-break: break-all;
+}
+
+/* ───────────────────────────── Skills ───────────────────────────── */
+
+.rs-skill-group {
+  margin-bottom: calc(var(--rs-gap) * 0.7);
+}
+
+.rs-skill-group:last-child {
+  margin-bottom: 0;
+}
+
+.rs-skill-label {
+  font-weight: 600;
+  font-size: calc(var(--rs-size) * 0.92);
+  color: var(--rs-heading);
+  margin-bottom: 0.6mm;
+}
+
+.rs-skill-values {
+  color: var(--rs-muted);
+}
+
+.rs-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(28mm, 1fr));
+  gap: 1mm 3mm;
+}
+
+.rs-meter {
+  margin-bottom: 1.6mm;
+}
+
+.rs-meter-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+  font-size: calc(var(--rs-size) * 0.92);
+  margin-bottom: 0.7mm;
+}
+
+.rs-meter-track {
+  height: 1.1mm;
+  border-radius: 99mm;
+  background: var(--rs-border);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.rs-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  width: var(--level, 0%);
+  background: var(--rs-accent);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Sidebar variants sit on a tint, so they need a little more contrast. */
+.rs-aside .rs-heading {
+  font-size: calc(var(--rs-size) * 0.98);
+}
+
+.rs-aside .rs-entry-title {
+  font-size: var(--rs-size);
+}
+
+.rs-aside-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4mm;
+  font-size: calc(var(--rs-size) * 0.92);
+  color: var(--rs-muted);
+  word-break: break-word;
+}
+
+.rs-aside-contact span {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.6mm;
+}
+
+.rs-aside-contact svg {
+  width: calc(var(--rs-size) * 1.05);
+  height: calc(var(--rs-size) * 1.05);
+  color: var(--rs-accent);
+  flex-shrink: 0;
+  margin-top: 0.35em;
+}
+
+.rs-summary {
+  color: var(--rs-text);
+}
+
+.rs-summary p + p {
+  margin-top: 1.4mm;
+}
+
+/* ───────────────────────────── Print ───────────────────────────── */
+
+@media print {
+  .rs-root {
+    background: #fff;
+  }
+
+  .rs-page {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .rs-page[data-guides="true"]::after {
+    display: none;
+  }
+}

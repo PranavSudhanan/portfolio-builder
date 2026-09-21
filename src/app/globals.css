@@ -1,0 +1,537 @@
+@import "tailwindcss";
+
+/*
+ * Builder chrome styles.
+ *
+ * This file styles the application shell only. Rendered portfolios are styled
+ * by `public/portfolio.css`, which is deliberately independent so it can be
+ * inlined into exports without any Tailwind build step.
+ */
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  /*
+   * A white, quiet palette. Surfaces are white and separated by a hairline
+   * rather than by shade, so the only strong colour on screen is whatever the
+   * person is building. Text and status colours are picked to clear WCAG AA
+   * against white: body 16:1, dim 7:1, faint 4.8:1, and every accent 4.5:1 or
+   * better, which the darker mint, amber and rose exist for — their original
+   * values were mixed for a near-black background and read as pastel here.
+   */
+  --color-ink: #ffffff;
+  --color-panel: #ffffff;
+  --color-raised: #f4f5f7;
+  --color-hover: #ebedf1;
+  --color-edge: #e4e6eb;
+  --color-edge-soft: #eceef2;
+  --color-body: #16181d;
+  --color-dim: #565b68;
+  --color-faint: #6e7484;
+  --color-brand: #5a4bf0;
+  --color-brand-soft: #6455f2;
+  --color-mint: #0a7d58;
+  --color-amber: #9a6206;
+  --color-rose: #d92d43;
+}
+
+/*
+ * Base element styles and the `.ui-*` component classes live in Tailwind's
+ * `base` and `components` layers. Unlayered CSS outranks every layered rule
+ * regardless of source order, so leaving these at the top level would let
+ * `.ui-tile` silently beat a `flex` or `p-0` utility applied beside it.
+ */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    border-color: var(--color-edge);
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  /*
+   * One focus ring for the whole shell.
+   * Only inputs had one, so tabbing through the rail, the panels and the
+   * toolbar was invisible — the controls are custom-styled, and on white the
+   * browser default all but disappears. `:focus-visible` keeps it for keyboard
+   * use without ringing every mouse click.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-ink);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+}
+
+@layer components {
+  /* Thin scrollbars everywhere in the builder chrome. */
+  .thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #cdd1da transparent;
+  }
+
+  .thin-scroll::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb {
+    background: #cdd1da;
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb:hover {
+    background: #c9ccd4;
+  }
+
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* ─────────────────────────── Form controls ─────────────────────────── */
+
+  .ui-input,
+  .ui-textarea,
+  .ui-select {
+    width: 100%;
+    padding: 8px 11px;
+    border-radius: 9px;
+    border: 1px solid var(--color-edge);
+    background: var(--color-raised);
+    color: var(--color-body);
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+  }
+
+  .ui-input::placeholder,
+  .ui-textarea::placeholder {
+    color: var(--color-faint);
+  }
+
+  .ui-input:focus,
+  .ui-textarea:focus,
+  .ui-select:focus {
+    outline: none;
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgb(90 75 240 / 0.16);
+  }
+
+  .ui-textarea {
+    resize: vertical;
+    min-height: 78px;
+  }
+
+  .ui-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%236e7484' stroke-width='1.6'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    background-size: 13px;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+
+  .ui-select option {
+    background: var(--color-panel);
+  }
+
+  .ui-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+  }
+
+  .ui-help {
+    margin-top: 5px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--color-faint);
+  }
+
+  /* Range slider */
+  .ui-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--color-edge);
+    outline: none;
+  }
+
+  .ui-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    border: 2px solid var(--color-panel);
+    cursor: pointer;
+    transition: transform 140ms ease;
+  }
+
+  .ui-range::-webkit-slider-thumb:hover {
+    transform: scale(1.18);
+  }
+
+  .ui-range::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    border: 2px solid var(--color-panel);
+    cursor: pointer;
+  }
+
+  /* Native colour swatch */
+  .ui-color {
+    width: 34px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--color-edge);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .ui-color::-webkit-color-swatch-wrapper {
+    padding: 3px;
+  }
+
+  .ui-color::-webkit-color-swatch {
+    border: none;
+    border-radius: 5px;
+  }
+
+  .ui-color::-moz-color-swatch {
+    border: none;
+    border-radius: 5px;
+  }
+
+  /* ─────────────────────────── Buttons ─────────────────────────── */
+
+  .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--color-edge);
+    background: var(--color-raised);
+    color: var(--color-body);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease, opacity 140ms ease;
+  }
+
+  .ui-btn:hover:not(:disabled) {
+    background: var(--color-hover);
+    border-color: #d3d6dd;
+  }
+
+  .ui-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .ui-btn[data-tone="primary"] {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: #fff;
+  }
+
+  .ui-btn[data-tone="primary"]:hover:not(:disabled) {
+    background: #4a3ae6;
+    border-color: #4a3ae6;
+  }
+
+  /* A button offering to delete something says so at rest, not only under
+     the pointer. */
+  .ui-btn[data-tone="danger"] {
+    border-color: rgb(217 45 67 / 0.4);
+    color: var(--color-rose);
+  }
+
+  .ui-btn[data-tone="danger"]:hover:not(:disabled) {
+    background: rgb(217 45 67 / 0.08);
+    border-color: var(--color-rose);
+    color: var(--color-rose);
+  }
+
+  .ui-btn[data-tone="ghost"] {
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-dim);
+  }
+
+  .ui-btn[data-tone="ghost"]:hover:not(:disabled) {
+    background: var(--color-hover);
+    color: var(--color-body);
+  }
+
+  .ui-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--color-faint);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 140ms ease;
+  }
+
+  .ui-icon-btn:hover:not(:disabled) {
+    background: var(--color-hover);
+    color: var(--color-body);
+  }
+
+  .ui-icon-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .ui-icon-btn[data-tone="danger"]:hover:not(:disabled) {
+    color: var(--color-rose);
+    background: rgb(217 45 67 / 0.08);
+  }
+
+  /* Segmented control */
+  .ui-seg {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border-radius: 9px;
+    border: 1px solid var(--color-edge);
+    background: var(--color-raised);
+  }
+
+  .ui-seg button {
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    /* These are choices, not passive labels, and they sit on the sunken track
+       rather than on white — faint drops below AA against it. */
+    color: var(--color-dim);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 140ms ease;
+    white-space: nowrap;
+  }
+
+  .ui-seg button:hover {
+    color: var(--color-body);
+  }
+
+  .ui-seg button[data-active="true"] {
+    background: var(--color-brand);
+    color: #fff;
+  }
+
+  /* Toggle switch */
+  .ui-switch {
+    position: relative;
+    width: 34px;
+    height: 20px;
+    border-radius: 99px;
+    border: 1px solid var(--color-edge);
+    background: var(--color-raised);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 160ms ease;
+  }
+
+  .ui-switch[data-on="true"] {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+  }
+
+  .ui-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(16 18 26 / 0.25);
+    transition: all 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ui-switch[data-on="true"]::after {
+    transform: translateX(14px);
+    background: #fff;
+  }
+
+  /* ─────────────────────────── Surfaces ─────────────────────────── */
+
+  .ui-card {
+    border-radius: 11px;
+    border: 1px solid var(--color-edge);
+    background: var(--color-panel);
+  }
+
+  .ui-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--color-raised);
+    border: 1px solid var(--color-edge);
+    font-size: 11px;
+    color: var(--color-dim);
+    white-space: nowrap;
+  }
+
+  /* Selectable tile used by template, theme and preset pickers */
+  .ui-tile {
+    position: relative;
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    border-radius: 11px;
+    border: 1px solid var(--color-edge);
+    background: var(--color-panel);
+    cursor: pointer;
+    transition: all 160ms ease;
+  }
+
+  .ui-tile:hover {
+    border-color: #d3d6dd;
+    background: var(--color-raised);
+  }
+
+  .ui-tile[data-selected="true"] {
+    border-color: var(--color-brand);
+    background: rgb(90 75 240 / 0.06);
+    box-shadow: 0 0 0 1px rgb(90 75 240 / 0.35);
+  }
+
+  /* ─────────────────────────── Animation ─────────────────────────── */
+
+  @keyframes ui-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .ui-fade {
+    animation: ui-fade-in 200ms ease both;
+  }
+
+  @keyframes ui-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .ui-spin {
+    animation: ui-spin 800ms linear infinite;
+  }
+
+
+
+  /* ─────────────────────── Drag-and-drop reordering ─────────────────────── */
+
+  /*
+   * Rows are wrapped in `.ui-sortable-item`, and `useSortable` sets the data
+   * attributes below. The insertion line is a pseudo-element so it sits over the
+   * row's own border and card background instead of fighting them.
+   */
+  .ui-sortable-item {
+    position: relative;
+  }
+
+  .ui-sortable-item[data-dragging="true"] {
+    opacity: 0.35;
+  }
+
+  .ui-sortable-item[data-drop]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-brand);
+    box-shadow: 0 0 0 3px rgb(90 75 240 / 0.2);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .ui-sortable-item[data-drop="before"]::after {
+    top: -3px;
+  }
+
+  .ui-sortable-item[data-drop="after"]::after {
+    bottom: -3px;
+  }
+
+  /* The grip only shows the grabbing cursor once a drag is actually under way. */
+  .ui-grip {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    flex-shrink: 0;
+    color: var(--color-faint);
+    border-radius: 5px;
+    transition: color 140ms ease, background 140ms ease;
+  }
+
+  .ui-grip:hover {
+    color: var(--color-body);
+    background: var(--color-hover);
+  }
+
+  .ui-grip:active {
+    cursor: grabbing;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
