@@ -119,6 +119,48 @@ carry on independently down the next page: a certification pushed in the sidebar
 column. Each column is walked separately while the page boundaries stay in shared sheet coordinates, because both
 columns sit on the same sheet of paper.
 
+## One specificity bug, every component
+
+`.pf-root a { color: inherit }` exists to kill the browser's link colour. It is also more specific than `.pf-btn`,
+`.pf-social` or `.pf-project-link` — one class plus one type beats one class — so every anchor-shaped component was
+quietly inheriting the body text colour instead of the one it asked for. A primary button came out with near-black
+text on a mid-dark fill, socials lost their muted grey, project links lost the accent.
+
+It hid for as long as it did because on a dark theme the inherited colour is near-white, which looks plausible on a
+coloured button. Light themes made it obvious.
+
+The button reset next to it was worse, because it strips three properties rather than one: `.pf-root button`
+declares `color: inherit`, `border: none` and `background: none`, and it outranks the components in exactly the same
+way. The floating theme toggle lost its surface and its border and became an unlabelled icon floating on the page;
+the tabbed template's inactive tabs lost their muted colour; and the contact form's submit button — the one
+`<button>` styled as a primary button — rendered as bare text with no fill at all.
+
+Both resets are now written `:where(a)` and `:where(button)`. `:where()` contributes no specificity, so they still
+beat the user agent and lose to any component that names a colour of its own. The résumé sheet had the same link
+reset and got the same change.
+
+The check that found them compares what each rule *declares* against what the element actually *computes*, which is
+the only way to catch this class of bug: a contrast audit sees nothing wrong, because inheriting the body text
+colour is perfectly readable — it is just not the colour the component asked for. Across all ten templates, every
+`.pf-*` rule that names a colour, background or border now resolves to the value it declares.
+
+## Phones get their own layout, not a squeezed one
+
+Two things were wrong on a phone, and neither showed up as an overflow.
+
+**In the portfolio**, the sidebar and timeline templates put their rail above the content when the columns
+collapse — an avatar, a name, a headline, a badge, a button and a row of socials, 455px of it, more than half the
+first screen, every item of which the hero repeats immediately below. It is now a 109px sticky header: who this is,
+and one scrolling line of links. The split hero also explicitly ordered its portrait above the copy on narrow
+screens, so the name sat below the fold beneath a 220px monogram; the copy comes first now. Touch targets are 44px
+(they were 38), the smallest type has an 11.5px floor (it was 10), and section padding is capped at 52px, which
+takes about a screen and a half out of a seven-section page.
+
+**In the builder**, the rail and the panel alone come to 400px, so below 1024px the canvas was squeezed to two
+pixels — you were editing blind. Narrow screens now show one pane at a time with a Preview/Edit toggle, the panel
+fills the width, and the toolbar keeps only what a phone has room for: the project, the two outputs, and the way
+out to the finished site.
+
 ## Portfolios are full width
 
 Every fixed content width was a compromise with one particular screen. 1040px looked generous on a laptop and left

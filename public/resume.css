@@ -38,7 +38,9 @@
   list-style: none;
 }
 
-.rs-root a {
+/* Zero-specificity for the same reason as the portfolio sheet: a link reset
+   should beat the browser, not the components. */
+.rs-root :where(a) {
   color: inherit;
   text-decoration: none;
 }

@@ -99,7 +99,7 @@ function SideRail({ doc, sections, active }: { doc: PortfolioDoc; sections: Sect
   const { profile, socials } = doc;
   return (
     <aside className="pf-side">
-      <div>
+      <div className="pf-side-id">
         <Avatar src={profile.avatar} name={displayName(profile.name)} shape="circle" className="pf-side-avatar" />
         <h2 className="pf-entry-title" style={{ marginTop: "16px" }}>
           {displayName(profile.name)}
@@ -127,7 +127,7 @@ function SideRail({ doc, sections, active }: { doc: PortfolioDoc; sections: Sect
         ))}
       </nav>
 
-      <div style={{ marginTop: "auto" }}>
+      <div className="pf-side-foot" style={{ marginTop: "auto" }}>
         {profile.email ? (
           <a className="pf-btn" href={`mailto:${profile.email}`} style={{ width: "100%", marginBottom: "14px" }}>
             <Icon name="Mail" size={16} />

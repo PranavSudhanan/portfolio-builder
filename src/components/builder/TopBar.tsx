@@ -50,7 +50,7 @@ function ProjectMenu() {
     <div className="relative" ref={ref}>
       <button
         type="button"
-        className="ui-btn min-w-0 max-w-[220px]"
+        className="ui-btn min-w-0 max-w-[132px] sm:max-w-[220px]"
         data-tone="ghost"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -233,9 +233,11 @@ export function TopBar() {
         </div>
       </div>
 
-      <SaveIndicator />
+      <span className="hidden sm:contents">
+        <SaveIndicator />
+      </span>
 
-      <div className="flex shrink-0 items-center gap-0.5">
+      <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
         <button
           type="button"
           className="ui-icon-btn"

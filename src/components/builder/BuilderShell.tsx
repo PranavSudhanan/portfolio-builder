@@ -1,6 +1,20 @@
 "use client";
 
-import { Download, FileText, Globe, LayoutTemplate, Layers, Palette, Settings, Type, User, Wand } from "lucide-react";
+import { useState } from "react";
+import {
+  Download,
+  Eye,
+  FileText,
+  Globe,
+  LayoutTemplate,
+  Layers,
+  Palette,
+  SquarePen,
+  Settings,
+  Type,
+  User,
+  Wand,
+} from "lucide-react";
 import { useBuilder, type PanelId } from "@/lib/store";
 import { Canvas } from "./Canvas";
 import { TopBar } from "./TopBar";
@@ -97,6 +111,15 @@ const PANELS: {
 export function BuilderShell() {
   const { panel, setPanel, focusMode, selectedSection, outputMode } = useBuilder();
 
+  /*
+   * Below 1024px the three columns do not fit: the rail and the panel alone
+   * come to 400px, so on a phone the canvas was squeezed to two pixels and you
+   * were editing blind. Narrow screens show one at a time and swap between
+   * them, which is the only honest way to fit an editor and its preview onto a
+   * 375px screen.
+   */
+  const [showPreview, setShowPreview] = useState(false);
+
   // Template and Theme shape the web page; Résumé shapes the document. Showing
   // whichever does not apply would just be three dead controls.
   const panels = PANELS.filter((p) =>
@@ -111,7 +134,7 @@ export function BuilderShell() {
 
       <div className="flex min-h-0 flex-1">
         {!focusMode ? (
-          <>
+          <div className={`flex min-h-0 min-w-0 flex-1 lg:flex-none ${showPreview ? "hidden lg:flex" : "flex"}`}>
             <nav
               className="flex w-[64px] shrink-0 flex-col items-center gap-1 border-r border-[var(--color-edge)] bg-[var(--color-panel)] py-2"
               aria-label="Editor panels"
@@ -138,7 +161,7 @@ export function BuilderShell() {
               })}
             </nav>
 
-            <aside className="flex w-[336px] shrink-0 flex-col border-r border-[var(--color-edge)] bg-[var(--color-panel)]">
+            <aside className="flex min-w-0 flex-1 flex-col border-r border-[var(--color-edge)] bg-[var(--color-panel)] lg:w-[336px] lg:flex-none">
               <div className="border-b border-[var(--color-edge)] px-4 py-3">
                 <h2 className="text-[14px] font-semibold">
                   {panel === "content" && selectedSection ? selectedSection.title || active.label : active.label}
@@ -149,13 +172,26 @@ export function BuilderShell() {
                 <ActivePanel />
               </div>
             </aside>
-          </>
+          </div>
         ) : null}
 
-        <main className="min-w-0 flex-1">
+        <main className={`min-w-0 flex-1 ${showPreview || focusMode ? "" : "hidden lg:block"}`}>
           <Canvas />
         </main>
       </div>
+
+      {/* One tap between what you are changing and what it looks like. */}
+      {focusMode ? null : (
+        <button
+          type="button"
+          className="ui-btn fixed bottom-4 right-4 z-50 shadow-lg lg:hidden"
+          data-tone="primary"
+          onClick={() => setShowPreview((open) => !open)}
+        >
+          {showPreview ? <SquarePen size={15} /> : <Eye size={15} />}
+          {showPreview ? "Edit" : "Preview"}
+        </button>
+      )}
     </div>
   );
 }
