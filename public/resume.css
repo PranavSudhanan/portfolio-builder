@@ -351,6 +351,8 @@
 /* ───────────────────────────── Skills ───────────────────────────── */
 
 .rs-skill-group {
+  /* The preview moves this off a page boundary; print must agree. */
+  break-inside: avoid;
   margin-bottom: calc(var(--rs-gap) * 0.7);
 }
 
@@ -376,6 +378,8 @@
 }
 
 .rs-meter {
+  /* The preview moves this off a page boundary; print must agree. */
+  break-inside: avoid;
   margin-bottom: 1.6mm;
 }
 
@@ -414,6 +418,8 @@
 }
 
 .rs-aside-contact {
+  /* The preview moves this off a page boundary; print must agree. */
+  break-inside: avoid;
   display: flex;
   flex-direction: column;
   gap: 1.4mm;
@@ -437,6 +443,8 @@
 }
 
 .rs-summary {
+  /* The preview moves this off a page boundary; print must agree. */
+  break-inside: avoid;
   color: var(--rs-text);
 }
 

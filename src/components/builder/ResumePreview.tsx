@@ -20,6 +20,10 @@ const MM_TO_PX = 96 / 25.4;
 export function ResumePreview({ scale }: { scale: number }) {
   const { doc } = useBuilder();
   const frameDocRef = useRef<Document | null>(null);
+  // `handleReady` runs once, so it cannot close over the current paginate.
+  const paginateRef = useRef<() => void>(() => {});
+  const observerRef = useRef<MutationObserver | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const page = PAGE_SIZES[doc.resume.pageSize] ?? PAGE_SIZES.a4;
   const pageWidthPx = Math.round(page.width * MM_TO_PX);
@@ -37,7 +41,45 @@ export function ResumePreview({ scale }: { scale: number }) {
     const style = frameDoc.createElement("style");
     style.textContent = "html,body{background:#f4f5f7}body{padding:18px 0}";
     frameDoc.head.appendChild(style);
+
+    /*
+     * Re-paginate whenever the layout could have moved under us.
+     *
+     * A single timer after a render was not enough. Web fonts land after the
+     * first paint and reflow every block, and editing the text inside an entry
+     * changes its height without changing the section counts the effect below
+     * keys on — so the guide lines stayed where the old layout put them and a
+     * page break fell through the middle of a bullet list.
+     *
+     * The observer watches content, not attributes, so the inline margins
+     * `paginate` writes cannot feed it back into itself.
+     */
+    // A short debounce rather than an animation frame: typing produces a burst
+    // of mutations, and a background tab stops serving frames entirely — the
+    // preview would then sit on a stale layout until it was looked at again.
+    const schedule = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        paginateRef.current();
+      }, 60);
+    };
+
+    void frameDoc.fonts?.ready.then(schedule).catch(() => {});
+
+    observerRef.current?.disconnect();
+    const observer = new MutationObserver(schedule);
+    observer.observe(frameDoc.body, { childList: true, characterData: true, subtree: true });
+    observerRef.current = observer;
   }, []);
+
+  useEffect(
+    () => () => {
+      observerRef.current?.disconnect();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   /**
    * Push blocks that would straddle a page boundary onto the next page.
@@ -67,14 +109,17 @@ export function ResumePreview({ scale }: { scale: number }) {
     // itself is the single column.
     const columns: HTMLElement[] = grid ? (Array.from(grid.children) as HTMLElement[]) : [sheet];
 
-    const SELECTOR = ".rs-heading, .rs-entry, .rs-summary, .rs-skill-group, .rs-meter";
+    const SELECTOR = ".rs-heading, .rs-entry, .rs-summary, .rs-skill-group, .rs-meter, .rs-aside-contact";
     // Clear every offset before measuring anything — leftovers from the previous
     // run would compound into the new positions.
     for (const column of columns) {
       for (const block of column.querySelectorAll<HTMLElement>(SELECTOR)) block.style.marginTop = "";
     }
 
-    const usable = pageHeightPx - marginPx * 2;
+    // The stylesheet owns the page padding; reading it back keeps the pushes
+    // aligned with the guides rather than with a recomputed millimetre value.
+    const pad = parseFloat(frameDoc.defaultView?.getComputedStyle(sheet).paddingTop ?? "") || marginPx;
+    const usable = pageHeightPx - pad * 2;
     for (const column of columns) {
       for (const block of Array.from(column.querySelectorAll<HTMLElement>(SELECTOR))) {
         const rect = block.getBoundingClientRect();
@@ -89,16 +134,22 @@ export function ResumePreview({ scale }: { scale: number }) {
 
         const top = rect.top - sheet.getBoundingClientRect().top;
         const pageIndex = Math.floor(top / pageHeightPx);
-        const bottomOfThisPage = pageIndex * pageHeightPx + pageHeightPx - marginPx;
+        const bottomOfThisPage = pageIndex * pageHeightPx + pageHeightPx - pad;
 
         if (top + height > bottomOfThisPage) {
-          const nextPageTop = (pageIndex + 1) * pageHeightPx + marginPx;
+          const nextPageTop = (pageIndex + 1) * pageHeightPx + pad;
           block.style.marginTop = `${nextPageTop - top}px`;
         }
       }
     }
     sheet.setAttribute("data-paginated", "true");
   }, [pageHeightPx, marginPx]);
+
+  // The observer in `handleReady` fires long after that callback closed over
+  // its scope, so it reaches the current paginate through this ref.
+  useEffect(() => {
+    paginateRef.current = paginate;
+  }, [paginate]);
 
   // Re-run whenever anything that affects layout changes. A frame lets the
   // browser finish laying out the new content before it is measured.

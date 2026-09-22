@@ -119,6 +119,22 @@ carry on independently down the next page: a certification pushed in the sidebar
 column. Each column is walked separately while the page boundaries stay in shared sheet coordinates, because both
 columns sit on the same sheet of paper.
 
+Getting the measurement right once is not enough, which is what made breaks land mid-bullet long after this was
+written. It ran on a timer keyed on the résumé settings and the section item counts, and missed the two things that
+move the layout most: **web fonts**, which arrive after the first paint and reflow every block, and **editing the
+text inside an entry**, which changes its height without changing any count. The old offsets stayed where they were
+and the guides drifted away from the content.
+
+It now re-runs on `document.fonts.ready` and on a `MutationObserver` watching the sheet for content changes,
+debounced so a burst of keystrokes costs one pass. The observer watches `childList` and `characterData` only — the
+inline margins the pass writes are attribute mutations, so it cannot feed itself. The debounce is a timer rather
+than an animation frame on purpose: a backgrounded tab is served no frames, and the preview would sit on a stale
+layout until someone looked at it again.
+
+Finally, print and preview now agree on what may not be broken. `.rs-entry` carried `break-inside: avoid`, but the
+summary, skill groups, meters and the sidebar contact block did not — the preview moved them and the printed PDF
+split them anyway.
+
 ## One specificity bug, every component
 
 `.pf-root a { color: inherit }` exists to kill the browser's link colour. It is also more specific than `.pf-btn`,
@@ -275,6 +291,22 @@ The same care applies within a line. "Assistant Manager - Audit" is one job titl
 Audit, so a hyphen or comma does not split off a **business function**; but "Role | Company | City, Country" does give
 up its city, which otherwise stays glued to the company. Under a degree that already names its school, a plain line is
 a **detail of it** — the field, the grade, the thesis — rather than the next qualification.
+Two things an import used to carry into the finished page, both now handled wherever they occur rather than for one
+file.
+
+**Links.** A résumé header usually lists a personal site and often an employer's, alongside the real profiles. Every
+one of them became a social icon, the personal site appeared twice — once as the website, once as a link — and the
+placeholder socials a new document ships with stayed behind pointing at `x.com/yourname`. Only recognised profiles
+become social links now; anything generic is already shown as the website. Links are compared with the scheme, the
+`www.` and the trailing slash removed, so one address cannot be listed twice, and any placeholder left unfilled at
+the end of an import is dropped — a finished page that sends a visitor to an account which does not exist is worse
+than one icon fewer.
+
+**Spoken languages.** Plenty of résumés end their skills list with "English, Hindi, Tamil" rather than giving them a
+heading, and a skills section that trails off into four languages reads as though they were frameworks. They are
+moved into the languages section whether or not the file had a heading for them. The list is natural languages only:
+Go and R are deliberately absent, because they name languages of quite another kind.
+
 That is still pattern matching, not comprehension. Résumés have no schema, so:
 
 - It tells you how confident it is, and warns when a file looks heavily formatted or multi-column.

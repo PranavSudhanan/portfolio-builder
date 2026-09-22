@@ -33,6 +33,29 @@ function ensureSection(doc: PortfolioDoc, type: SectionType) {
   return section;
 }
 
+/**
+ * A URL reduced to the part that decides whether two links are the same.
+ *
+ * A résumé header writes a site as "leapsurgebi.com" while the profile stores
+ * "https://leapsurgebi.com/". Without this the one address is listed twice,
+ * once as the website and once as a social link.
+ */
+function linkKey(url: string): string {
+  let value = url.trim().toLowerCase();
+  const scheme = value.indexOf("://");
+  if (scheme >= 0) value = value.slice(scheme + 3);
+  if (value.startsWith("www.")) value = value.slice(4);
+  while (value.endsWith("/")) value = value.slice(0, -1);
+  return value;
+}
+
+/** A social link the document shipped with and nobody has filled in. */
+function isPlaceholderSocial(url: string): boolean {
+  const value = url.trim().toLowerCase();
+  if (!value) return true;
+  return value.includes("yourname") || value.includes("username") || value.includes("example.com");
+}
+
 /** Guess the platform for a URL so the icon and label come out right. */
 function platformFor(url: string): { icon: string; label: string } {
   const value = url.toLowerCase();
@@ -58,24 +81,39 @@ export function applyParsedResume(doc: PortfolioDoc, parsed: ParsedResume, field
     if (parsed.website) doc.profile.website = parsed.website;
   }
 
-  if (fields.has("links") && parsed.links.length > 0) {
+  if (fields.has("links")) {
     for (const url of parsed.links) {
       const normalized = normalizeUrl(url);
-      if (doc.socials.some((s) => s.url === normalized)) continue;
+      const key = linkKey(normalized);
+      if (doc.socials.some((s) => linkKey(s.url) === key)) continue;
+
       const platform = platformFor(url);
+
+      /*
+       * Only recognised profiles become social links. A résumé header often
+       * carries a personal site and an employer's — the first is already shown
+       * as the website in the contact details, and the rest are somebody
+       * else's domain sitting under a link icon.
+       */
+      if (platform.icon === "website") continue;
 
       // A new document ships with placeholder social links. Importing a real
       // profile should fill the matching one in, not sit next to it as a
       // second GitHub entry.
-      const placeholder = doc.socials.find(
-        (s) => s.icon === platform.icon && (!s.url.trim() || /yourname|username|example\.com/i.test(s.url)),
-      );
+      const placeholder = doc.socials.find((s) => s.icon === platform.icon && isPlaceholderSocial(s.url));
       if (placeholder) {
         placeholder.url = normalized;
         continue;
       }
       doc.socials.push({ id: uid("soc"), label: platform.label, url: normalized, icon: platform.icon });
     }
+
+    /*
+     * Whatever is still pointing at yourname or example.com was never filled
+     * in. Leaving it means the finished page sends a visitor to an account
+     * that does not exist, which is worse than one icon fewer.
+     */
+    doc.socials = doc.socials.filter((s) => !isPlaceholderSocial(s.url));
   }
 
   const wantsSummary = fields.has("summary") && Boolean(parsed.summary);

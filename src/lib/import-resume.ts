@@ -638,6 +638,36 @@ function takePeriod(text: string): { rest: string; period: string } {
   return { rest: text, period: "" };
 }
 
+/**
+ * Languages a person speaks, for pulling them back out of a skills list.
+ *
+ * Plenty of résumés list "English, Hindi, Tamil" at the end of their skills
+ * rather than under a heading of their own, and a skills section that ends in
+ * four languages reads as though they were frameworks. Deliberately natural
+ * languages only — nothing here collides with a technology, which is why Go
+ * and R are absent even though they name languages of another kind.
+ */
+const SPOKEN_LANGUAGES = new Set([
+  "english", "hindi", "malayalam", "tamil", "telugu", "kannada", "marathi", "gujarati", "bengali", "punjabi",
+  "urdu", "odia", "assamese", "sanskrit", "konkani", "tulu", "bhojpuri", "nepali", "sinhala",
+  "spanish", "french", "german", "italian", "portuguese", "dutch", "danish", "swedish", "norwegian", "finnish",
+  "polish", "czech", "slovak", "hungarian", "romanian", "bulgarian", "greek", "turkish", "russian", "ukrainian",
+  "arabic", "hebrew", "persian", "farsi", "mandarin", "cantonese", "chinese", "japanese", "korean", "vietnamese",
+  "thai", "indonesian", "malay", "filipino", "tagalog", "swahili", "afrikaans", "zulu", "amharic", "hausa",
+]);
+
+/** "Hindi", "English (Native)" and "Tamil - Fluent" all name a language. */
+function isSpokenLanguage(value: string): boolean {
+  // Cut at the first qualifier so the level travels with the entry rather than
+  // defeating the lookup: Native, Fluent, read/write and so on.
+  let name = value.trim();
+  for (const mark of ["(", "[", " -", " —", " –", ":"]) {
+    const at = name.indexOf(mark);
+    if (at > 0) name = name.slice(0, at);
+  }
+  return SPOKEN_LANGUAGES.has(name.trim().toLowerCase());
+}
+
 /** Group a block of lines into entries. */
 function parseEntries(lines: DocLine[], bodySize: number, blockKey: BlockKey): Item[] {
   // Only roles and qualifications carry a place. Everywhere else — projects
@@ -940,8 +970,14 @@ export function parseResume(input: (DocLine | string)[]): ParsedResume {
   result.projects = parseEntries(blocks.get("projects") ?? [], bodySize, "projects");
   result.certifications = parseEntries(blocks.get("certifications") ?? [], bodySize, "certifications");
   result.awards = parseEntries(blocks.get("awards") ?? [], bodySize, "awards");
-  result.skills = parseList(blocks.get("skills") ?? []);
-  result.languages = parseList(blocks.get("languages") ?? []);
+  const skills = parseList(blocks.get("skills") ?? []);
+  const languages = parseList(blocks.get("languages") ?? []);
+  // A skills list that trails off into spoken languages is common enough to be
+  // worth undoing; they belong in their own section whether or not the file had
+  // a heading for them.
+  result.skills = skills.filter((skill) => !isSpokenLanguage(skill));
+  const known = new Set(languages.map((l) => l.toLowerCase()));
+  result.languages = [...languages, ...skills.filter((s) => isSpokenLanguage(s) && !known.has(s.toLowerCase()))];
 
   const found =
     (result.experience.length > 0 ? 1 : 0) +
