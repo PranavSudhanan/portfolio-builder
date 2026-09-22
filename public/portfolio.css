@@ -2332,6 +2332,15 @@
 }
 
 @media (max-width: 900px) {
+  /*
+   * A display name at the grand type scale is 104px, which is a deliberate
+   * choice on a wide screen and two stacked lines of it on a tablet. The scale
+   * stays the ceiling; below it the size follows the viewport.
+   */
+  .pf-hero-name {
+    font-size: min(var(--pf-text-5xl), max(40px, 9vw));
+  }
+
   .pf-grid {
     grid-template-columns: repeat(min(var(--cols, 2), 2), minmax(0, 1fr));
   }

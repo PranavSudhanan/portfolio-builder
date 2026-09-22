@@ -1,4 +1,4 @@
-import type { ParsedResume } from "./import-resume";
+import { platformOf, type ParsedResume } from "./import-resume";
 import { createSection } from "./sections";
 import type { Item, PortfolioDoc, SectionType } from "./types";
 import { normalizeUrl, uid } from "./utils";
@@ -57,18 +57,30 @@ function isPlaceholderSocial(url: string): boolean {
 }
 
 /** Guess the platform for a URL so the icon and label come out right. */
+/*
+ * Icon and label for a link, driven by the same table the importer uses to
+ * decide what counts as a profile. Two lists would drift, and the one that
+ * matters here is the one that decided whether the link was a website.
+ */
+const PLATFORM_LABELS: Record<string, { icon: string; label: string }> = {
+  linkedin: { icon: "linkedin", label: "LinkedIn" },
+  github: { icon: "github", label: "GitHub" },
+  gitlab: { icon: "gitlab", label: "GitLab" },
+  x: { icon: "x", label: "X" },
+  behance: { icon: "other", label: "Behance" },
+  dribbble: { icon: "dribbble", label: "Dribbble" },
+  medium: { icon: "other", label: "Medium" },
+  instagram: { icon: "instagram", label: "Instagram" },
+  youtube: { icon: "youtube", label: "YouTube" },
+  stackoverflow: { icon: "other", label: "Stack Overflow" },
+  kaggle: { icon: "other", label: "Kaggle" },
+  orcid: { icon: "other", label: "ORCID" },
+  scholar: { icon: "other", label: "Google Scholar" },
+};
+
 function platformFor(url: string): { icon: string; label: string } {
-  const value = url.toLowerCase();
-  if (value.includes("linkedin")) return { icon: "linkedin", label: "LinkedIn" };
-  if (value.includes("github")) return { icon: "github", label: "GitHub" };
-  if (value.includes("gitlab")) return { icon: "gitlab", label: "GitLab" };
-  if (value.includes("dribbble")) return { icon: "dribbble", label: "Dribbble" };
-  if (value.includes("behance")) return { icon: "other", label: "Behance" };
-  if (value.includes("x.com") || value.includes("twitter")) return { icon: "x", label: "X" };
-  if (value.includes("instagram")) return { icon: "instagram", label: "Instagram" };
-  if (value.includes("youtube")) return { icon: "youtube", label: "YouTube" };
-  if (value.includes("medium")) return { icon: "other", label: "Medium" };
-  return { icon: "website", label: "Website" };
+  const key = platformOf(url);
+  return (key && PLATFORM_LABELS[key]) || { icon: "website", label: "Website" };
 }
 
 export function applyParsedResume(doc: PortfolioDoc, parsed: ParsedResume, fields: Set<ApplyField>): void {

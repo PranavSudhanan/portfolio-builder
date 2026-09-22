@@ -45,9 +45,18 @@ export function ResumePreview({ scale }: { scale: number }) {
    * full width, type with a floor in pixels. It is the same layout the
    * exported file gives a phone, which makes this an honest preview of it.
    */
-  const fluid = areaWidth > 0 && areaWidth < pageWidthPx + 24;
+  /*
+   * Paper for as long as paper is readable. The smallest zoom on offer is 50%,
+   * so a canvas at least half the width of the page can still show the whole
+   * sheet; narrower than that and there is nothing to be gained by shrinking it
+   * further, which is where the fluid layout takes over.
+   */
+  const fluid = areaWidth > 0 && areaWidth < pageWidthPx * 0.5;
   const frameWidth = fluid ? Math.max(320, Math.round(areaWidth)) : pageWidthPx;
-  const fitted = fluid ? 1 : scale;
+  // On paper, the chosen zoom capped at what the canvas can actually show, so
+  // the sheet never hides behind a horizontal scrollbar.
+  const roomToFit = areaWidth > 0 ? (areaWidth - 24) / pageWidthPx : 1;
+  const fitted = fluid ? 1 : Math.min(scale, Math.max(roomToFit, 0.4));
 
   const handleReady = useCallback((frameDoc: Document) => {
     frameDocRef.current = frameDoc;

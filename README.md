@@ -315,6 +315,22 @@ a **detail of it** — the field, the grade, the thesis — rather than the next
 Two things an import used to carry into the finished page, both now handled wherever they occur rather than for one
 file.
 
+**Dates.** The month pattern was a three-letter prefix followed by any run of letters, so that `Sept.` and
+`September` would both match. It also meant `nov` could swallow the rest of `Innovations`: a role at Tech
+Innovations starting 05/2024 came out with a period of "novations 05/2024 - Present". The endings are spelled out
+now, so a month has to be a month.
+
+With that fixed, a second shape fell into place. A date used to open a new entry unconditionally, which split
+"Software Engineer" over "Tech Innovations 05/2024 - Present" into a title with nothing under it followed by a
+company masquerading as a job. When the entry above is still missing both its organisation and its dates, a dated
+line completes it instead — which is also how a certification and its issuing year end up on one line.
+
+**The website.** Taking the first link that is not a known platform published an employer's domain on the finished
+page as the person's own site. A header carrying two generic domains does not say which of them is theirs, so
+nothing is claimed: one candidate is taken, more than one leaves the field blank. The table of recognised platforms
+is now shared between the importer and the step that applies it, so the two cannot disagree about what counts as a
+profile.
+
 **Links.** A résumé header usually lists a personal site and often an employer's, alongside the real profiles. Every
 one of them became a social icon, the personal site appeared twice — once as the website, once as a link — and the
 placeholder socials a new document ships with stayed behind pointing at `x.com/yourname`. Only recognised profiles

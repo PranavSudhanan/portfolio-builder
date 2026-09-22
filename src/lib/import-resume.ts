@@ -400,6 +400,31 @@ function scoreHeading(text: string): BlockKey | null {
   return best?.key ?? null;
 }
 
+/** The platform a link belongs to, or null when it is just a domain. */
+const PLATFORMS: { key: string; match: string[] }[] = [
+  { key: "linkedin", match: ["linkedin."] },
+  { key: "github", match: ["github.com", "github.io"] },
+  { key: "gitlab", match: ["gitlab."] },
+  { key: "x", match: ["twitter.com", "x.com"] },
+  { key: "behance", match: ["behance."] },
+  { key: "dribbble", match: ["dribbble."] },
+  { key: "medium", match: ["medium.com"] },
+  { key: "instagram", match: ["instagram."] },
+  { key: "youtube", match: ["youtube.com", "youtu.be"] },
+  { key: "stackoverflow", match: ["stackoverflow.com"] },
+  { key: "kaggle", match: ["kaggle.com"] },
+  { key: "orcid", match: ["orcid.org"] },
+  { key: "scholar", match: ["scholar.google."] },
+];
+
+export function platformOf(url: string): string | null {
+  const value = url.toLowerCase();
+  for (const { key, match } of PLATFORMS) {
+    if (match.some((needle) => value.includes(needle))) return key;
+  }
+  return null;
+}
+
 const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/;
 const PHONE = /(\+?\d[\d\s().-]{7,}\d)/;
 // Labels must be two characters or more, so abbreviations like "B.Com" and
@@ -408,7 +433,17 @@ const URL_SOURCE =
   "((https?://|www\\.)[^\\s,;|]+|(?:[\\w-]{2,}\\.)+(?:com|org|net|io|dev|me|co|in|ai|uk|edu|xyz)(?:/[^\\s,;|]*)?)";
 
 /** Date ranges, covering the shapes résumés actually use. */
-const MONTH = "(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\\.?";
+/*
+ * Month names, spelled out rather than a prefix plus anything.
+ *
+ * The old pattern was "(jan|feb|...|nov|dec)" followed by any run of letters,
+ * which let "nov" swallow the rest of "Innovations": a role at Tech
+ * Innovations starting 05/2024 came out with a period of
+ * "novations 05/2024 - Present". Listing the endings means a month has to be a
+ * month.
+ */
+const MONTH =
+  "(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?";
 const DATE = `(?:${MONTH}\\s*)?(?:\\d{1,2}[/.\\-])?(?:\\d{4}|'\\d{2})`;
 const PERIOD = new RegExp(
   `(?:since\\s+)?${DATE}\\s*(?:[-–—]|to|until|till)\\s*(?:${DATE}|present|current|now|date|ongoing)`,
@@ -779,6 +814,30 @@ function parseEntries(lines: DocLine[], bodySize: number, blockKey: BlockKey): I
     // lower case, which is what keeps descriptions from splitting.
     const looksLikeTitle = /^[A-Z0-9]/.test(text) && !isSentence && text.length <= 80;
 
+    /*
+     * "Software Engineer" on one line, "Tech Innovations 05/2024 - Present" on
+     * the next. A date always opened a new entry, which split that role in two:
+     * a title with nothing under it, then a company masquerading as a job. When
+     * the entry above is still missing both its organisation and its dates, a
+     * dated line completes it rather than replacing it.
+     */
+    if (
+      period &&
+      current &&
+      !current.period &&
+      !current.subtitle &&
+      !current.description &&
+      !current.bullets?.length
+    ) {
+      if (rest) {
+        const { org, place } = expectsLocation ? splitOrgPlace(rest) : { org: rest, place: "" };
+        current.subtitle = org || rest;
+        if (place && !current.location) current.location = place;
+      }
+      current.period = period;
+      continue;
+    }
+
     const startsEntry =
       Boolean(period) ||
       !current ||
@@ -895,7 +954,20 @@ export function parseResume(input: (DocLine | string)[]): ParsedResume {
       if (!result.links.includes(url)) result.links.push(url);
     }
   }
-  result.website = result.links.find((l) => !/linkedin|github|gitlab|twitter|x\.com|behance|dribbble|medium/i.test(l)) ?? "";
+  /*
+   * A personal site, only when there is no doubt which one it is.
+   *
+   * Taking the first link that is not a known platform meant an employer's
+   * domain in the header — "leapsurgebi.com" beside a github and a linkedin —
+   * was published on the finished page as the person's own website. A header
+   * carrying two generic domains does not say which of them is theirs, so
+   * nothing is claimed: one candidate is taken, more than one is left blank for
+   * the person to fill in.
+   */
+  const generic = result.links.filter(
+    (link) => platformOf(link) === null,
+  );
+  result.website = generic.length === 1 ? generic[0] : "";
 
   // Split into blocks at each heading.
   const blocks = new Map<BlockKey, DocLine[]>();
