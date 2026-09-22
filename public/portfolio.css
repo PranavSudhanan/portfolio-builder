@@ -2241,73 +2241,13 @@
     grid-template-columns: 1fr;
   }
 
-  .pf-side {
-    position: static;
-    height: auto;
-    max-height: none;
-    border-right: none;
-    border-bottom: 1px solid var(--pf-border);
-    padding: 28px 24px;
-  }
-
-  .pf-side-avatar {
-  width: 84px;
-  height: 84px;
-  font-size: 26px;
-}
-
-.pf-side-links {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .pf-root[data-pf-template="magazine"] .pf-head {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-}
-
-@media (max-width: 900px) {
-  .pf-grid {
-    grid-template-columns: repeat(min(var(--cols, 2), 2), minmax(0, 1fr));
-  }
-
-  .pf-masonry {
-    column-count: min(var(--cols, 3), 2);
-  }
-
-  .pf-hero-split,
-  .pf-about-split,
-  .pf-contact-split,
-  .pf-showcase-item {
-    grid-template-columns: 1fr;
-  }
-
-  .pf-showcase-item:nth-child(even) > .pf-media {
-    order: 0;
-  }
-
-  .pf-hero-avatar {
-    width: min(220px, 60%);
-    order: -1;
-    margin-inline: 0;
-  }
-
-  .pf-root[data-pf-template="bento"] .pf-card[data-featured="true"] {
-    grid-column: span 1;
-  }
-}
-
-@media (max-width: 720px) {
   /*
-   * The side rail is a column beside the content on a desktop. Stacked on a
-   * phone it became a 450px wall — more than half the first screen spent on an
-   * avatar, a name, a headline, a badge, a button and a row of socials, every
-   * one of which the hero repeats immediately below it.
-   *
-   * On mobile it collapses to what navigation actually needs: who this is, and
-   * one scrolling line of links. It stays stuck to the top, so those links are
-   * reachable from anywhere on the page the way the top-nav templates are.
+   * Once the rail is stacked above the content rather than beside it, it is a
+   * wall: an avatar, a name, a headline, a badge, a button and a row of socials,
+   * 430px of it on a tablet and more than half the first screen on a phone —
+   * every item of which the hero repeats immediately below. From here down it is
+   * a compact sticky header instead: who this is, and one scrolling line of
+   * links, so those links stay reachable the way the top-nav templates are.
    */
   .pf-side {
     position: sticky;
@@ -2317,8 +2257,7 @@
     max-height: none;
     overflow: visible;
     /* A grid item is min-content wide by default, so the un-shrinkable link
-       row below would stretch the rail to 676px inside a 375px screen and
-       scroll nothing. */
+       row below would stretch the rail past the screen and scroll nothing. */
     min-width: 0;
     gap: 8px;
     padding: 9px 14px 7px;
@@ -2354,7 +2293,7 @@
     display: none;
   }
 
-  /* One line that scrolls, rather than three rows of wrapped pills. */
+  /* One line that scrolls, rather than rows of wrapped pills. */
   .pf-side-links {
     flex-direction: row;
     flex-wrap: nowrap;
@@ -2376,6 +2315,56 @@
     flex-shrink: 0;
   }
 
+  /*
+   * `1fr` is `minmax(auto, 1fr)`, and `auto` is min-content: one long word in a
+   * display-sized title made the track 550px inside a 388px screen and the
+   * heading ran off the edge. `minmax(0, 1fr)` lets the track shrink; the title
+   * then has to fit, which is what the fluid size below is for.
+   */
+  .pf-root[data-pf-template="magazine"] .pf-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .pf-root[data-pf-template="magazine"] .pf-title {
+    font-size: min(var(--pf-text-5xl), max(28px, 10vw));
+  }
+}
+
+@media (max-width: 900px) {
+  .pf-grid {
+    grid-template-columns: repeat(min(var(--cols, 2), 2), minmax(0, 1fr));
+  }
+
+  .pf-masonry {
+    column-count: min(var(--cols, 3), 2);
+  }
+
+  .pf-hero-split,
+  .pf-about-split,
+  .pf-contact-split,
+  .pf-showcase-item {
+    /* minmax(0, …) rather than 1fr: a long unbreakable word in a column must
+       not be able to push the track wider than the screen. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pf-showcase-item:nth-child(even) > .pf-media {
+    order: 0;
+  }
+
+  .pf-hero-avatar {
+    width: min(220px, 60%);
+    order: -1;
+    margin-inline: 0;
+  }
+
+  .pf-root[data-pf-template="bento"] .pf-card[data-featured="true"] {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 720px) {
   /*
    * Touch targets. A 38px control is comfortable with a mouse and a near-miss
    * with a thumb; both platforms ask for 44.
@@ -2523,8 +2512,17 @@
     column-count: 1;
   }
 
+  /*
+   * A name is as long as it is. At a fixed 4xl a three-part name sets four
+   * lines of 49px type before anything else on the page is visible, so the
+   * size follows the viewport with the scale as its ceiling.
+   */
   .pf-hero-name {
-    font-size: var(--pf-text-4xl);
+    font-size: min(var(--pf-text-4xl), max(30px, 11vw));
+  }
+
+  .pf-hero-headline {
+    font-size: min(var(--pf-text-xl), max(18px, 5.6vw));
   }
 
   .pf-entry-head {

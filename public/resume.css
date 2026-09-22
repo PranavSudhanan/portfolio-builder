@@ -454,6 +454,80 @@
 
 /* ───────────────────────────── Print ───────────────────────────── */
 
+/*
+ * Phones and small tablets.
+ *
+ * A résumé is a sheet of paper, and everything above is sized in millimetres
+ * and points so that it prints correctly. Handed to a phone unchanged, that is
+ * a 210mm page in a 375px window: the reader gets a postage stamp and a
+ * horizontal scrollbar. On a small screen the sheet stops pretending to be
+ * paper — it fills the width, the columns stack, and the type gets a floor in
+ * pixels — while print keeps the millimetres, because the rules below are
+ * scoped to `screen`.
+ */
+@media screen and (max-width: 780px) {
+  .rs-root {
+    background: #fff;
+    /* Points are a paper unit; 10pt is fine at arm's length and small on a
+       phone held at thirty centimetres. */
+    font-size: max(var(--rs-size), 14.5px);
+  }
+
+  .rs-page {
+    /* Named so the full-bleed banner below can undo exactly this much. */
+    --rs-pad-x: 18px;
+    --rs-pad-top: 26px;
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: var(--rs-pad-top) var(--rs-pad-x) 40px;
+    box-shadow: none;
+  }
+
+  /*
+   * The creative template bleeds its header to the paper edge with a negative
+   * margin of one page margin — 16mm, which is 60px. Against the 18px padding a
+   * phone gets, that put the banner 42px past each edge and gave the document a
+   * horizontal scrollbar.
+   */
+  .rs-header[data-align="banner"] {
+    margin: calc(var(--rs-pad-top) * -1) calc(var(--rs-pad-x) * -1) calc(var(--rs-gap) * 1.4);
+    padding-inline: var(--rs-pad-x);
+    padding-top: var(--rs-pad-top);
+  }
+
+  /* Page guides mean nothing once the sheet is not a sheet. */
+  .rs-page[data-guides="true"]::after {
+    display: none;
+  }
+
+  /* The creative template puts its sidebar on the right with a selector one
+     step more specific, so it has to be named here or it keeps two columns. */
+  .rs-columns,
+  .rs-columns[data-side="right"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(var(--rs-gap) * 1.4);
+  }
+
+  .rs-aside {
+    padding: 16px;
+  }
+
+  /* Dates sit beside the role on paper; beside it in 375px they squeeze the
+     title to two words a line. */
+  .rs-entry-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  /* Only in the role header. The same class labels the level in a languages
+     row, where reordering an empty span pushes the language to the far right. */
+  .rs-entry-top .rs-entry-period {
+    order: -1;
+  }
+}
+
 @media print {
   .rs-root {
     background: #fff;

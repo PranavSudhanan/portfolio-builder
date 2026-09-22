@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PAGE_SIZES } from "@/lib/resume";
 import { useBuilder } from "@/lib/store";
 import { Resume } from "@/renderer/Resume";
@@ -24,11 +24,30 @@ export function ResumePreview({ scale }: { scale: number }) {
   const paginateRef = useRef<() => void>(() => {});
   const observerRef = useRef<MutationObserver | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  // Read inside `paginate`, which is memoised and must not be rebuilt for this.
+  const fluidRef = useRef(false);
+  // How wide the canvas actually is, so a sheet can never be wider than it.
+  const [areaWidth, setAreaWidth] = useState(0);
 
   const page = PAGE_SIZES[doc.resume.pageSize] ?? PAGE_SIZES.a4;
   const pageWidthPx = Math.round(page.width * MM_TO_PX);
   const pageHeightPx = page.height * MM_TO_PX;
   const marginPx = doc.resume.margin * MM_TO_PX;
+
+  /*
+   * Below the width of the paper the preview stops imitating paper.
+   *
+   * Scaling an A4 sheet into a 375px column puts the type at 44% — legible in
+   * the sense that the pixels are there, unreadable in every sense that
+   * matters. The frame is rendered at the width it actually has instead, which
+   * puts the résumé stylesheet under its own small-screen rules: one column,
+   * full width, type with a floor in pixels. It is the same layout the
+   * exported file gives a phone, which makes this an honest preview of it.
+   */
+  const fluid = areaWidth > 0 && areaWidth < pageWidthPx + 24;
+  const frameWidth = fluid ? Math.max(320, Math.round(areaWidth)) : pageWidthPx;
+  const fitted = fluid ? 1 : scale;
 
   const handleReady = useCallback((frameDoc: Document) => {
     frameDocRef.current = frameDoc;
@@ -104,6 +123,13 @@ export function ResumePreview({ scale }: { scale: number }) {
     const sheet = frameDoc?.querySelector<HTMLElement>(".rs-page");
     if (!frameDoc || !sheet) return;
 
+    // A fluid preview has no page boundaries to push blocks across, and the
+    // offsets from a previous paper layout would be left stranded mid-column.
+    if (fluidRef.current) {
+      for (const block of sheet.querySelectorAll<HTMLElement>("[style*='margin-top']")) block.style.marginTop = "";
+      return;
+    }
+
     const grid = sheet.querySelector<HTMLElement>(".rs-columns");
     // The grid's children are the two independent columns; otherwise the sheet
     // itself is the single column.
@@ -145,11 +171,44 @@ export function ResumePreview({ scale }: { scale: number }) {
     sheet.setAttribute("data-paginated", "true");
   }, [pageHeightPx, marginPx]);
 
+  useEffect(() => {
+    fluidRef.current = fluid;
+  }, [fluid]);
+
   // The observer in `handleReady` fires long after that callback closed over
   // its scope, so it reaches the current paginate through this ref.
   useEffect(() => {
     paginateRef.current = paginate;
   }, [paginate]);
+
+  /*
+   * Watch the canvas so the sheet can be made to fit it.
+   *
+   * A4 is 794px wide; the narrowest zoom on offer is 50%, which is still 397px
+   * and wider than a phone. Without this the résumé could only be read through
+   * a horizontal scrollbar on any screen narrower than the paper.
+   */
+  useEffect(() => {
+    const area = areaRef.current;
+    if (!area || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setAreaWidth(entry.contentRect.width));
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, []);
+
+  /*
+   * And measure after every render, because the observer does not cover the
+   * one transition that matters most here: on a narrow screen the canvas starts
+   * behind the editor pane, and an element with no box is not reported. The
+   * guard keeps this from looping — a render only sets state when the width
+   * genuinely moved.
+   */
+  useEffect(() => {
+    const area = areaRef.current;
+    if (!area) return;
+    const width = area.getBoundingClientRect().width;
+    setAreaWidth((previous) => (Math.abs(previous - width) > 1 ? width : previous));
+  });
 
   // Re-run whenever anything that affects layout changes. A frame lets the
   // browser finish laying out the new content before it is measured.
@@ -159,20 +218,21 @@ export function ResumePreview({ scale }: { scale: number }) {
     return () => clearTimeout(timer);
   }, [layoutKey, paginate]);
 
+
   return (
-    <div className="flex h-full w-full justify-center overflow-auto thin-scroll bg-[var(--color-raised)]">
-      <div style={{ width: pageWidthPx * scale, flexShrink: 0 }}>
+    <div ref={areaRef} className="flex h-full w-full justify-center overflow-auto thin-scroll bg-[var(--color-raised)]">
+      <div style={{ width: frameWidth * fitted, flexShrink: 0 }}>
         <div
           style={{
-            width: pageWidthPx,
-            height: `${100 / scale}%`,
-            transform: scale === 1 ? undefined : `scale(${scale})`,
+            width: frameWidth,
+            height: `${100 / fitted}%`,
+            transform: fitted === 1 ? undefined : `scale(${fitted})`,
             transformOrigin: "top left",
           }}
         >
           <PreviewFrame
             fonts={[doc.resume.headingFont, doc.resume.bodyFont]}
-            width={pageWidthPx}
+            width={frameWidth}
             onReady={handleReady}
             className="h-full border-0"
           >

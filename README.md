@@ -160,12 +160,33 @@ the only way to catch this class of bug: a contrast audit sees nothing wrong, be
 colour is perfectly readable — it is just not the colour the component asked for. Across all ten templates, every
 `.pf-*` rule that names a colour, background or border now resolves to the value it declares.
 
+## The résumé stops pretending to be paper on a phone
+
+Everything about the résumé is sized in millimetres and points so that it prints correctly, and `resume.css` had no
+screen breakpoint at all. Handed to a phone that is a 210mm sheet in a 375px window: a postage stamp and a
+horizontal scrollbar. Scaling it to fit is no better — an A4 page in a 375px column puts the type at 44%, which is
+legible in the sense that the pixels are there and unreadable in every sense that matters.
+
+Below 780px the sheet becomes a document instead: full width, one column, type with a floor in pixels, page guides
+off. The breakpoint sits below the paper itself (A4 is 794px, US Letter 816px) so the builder's preview frame, which
+is rendered at the true page width, keeps the paper layout. `@media screen` keeps print on the millimetres.
+
+The builder's preview does the same thing rather than scaling: when the canvas is narrower than the paper it renders
+the frame at the width it actually has, which puts the résumé under its own small-screen rules and makes the preview
+an honest picture of what the exported file gives a phone. Pagination is skipped there, because a fluid column has
+no page boundaries to push blocks across.
+
+Two template-specific traps came out of testing all six at 375px. The creative template puts its sidebar on the
+right through a selector one step more specific, so the stacking rule had to name it or it kept two columns. And its
+banner header bleeds to the paper edge with a negative margin of one page margin — 16mm, or 60px — which against a
+phone's 18px padding hung 42px off each side; the mobile padding is a variable now and the bleed undoes exactly it.
+
 ## Phones get their own layout, not a squeezed one
 
 Two things were wrong on a phone, and neither showed up as an overflow.
 
-**In the portfolio**, the sidebar and timeline templates put their rail above the content when the columns
-collapse — an avatar, a name, a headline, a badge, a button and a row of socials, 455px of it, more than half the
+**In the portfolio**, the sidebar and timeline templates put their rail above the content from 1080px down
+(430px of it on a tablet, more than half the first screen on a phone) — an avatar, a name, a headline, a badge, a button and a row of socials, 455px of it, more than half the
 first screen, every item of which the hero repeats immediately below. It is now a 109px sticky header: who this is,
 and one scrolling line of links. The split hero also explicitly ordered its portrait above the copy on narrow
 screens, so the name sat below the fold beneath a 220px monogram; the copy comes first now. Touch targets are 44px
